@@ -70,6 +70,9 @@ def errorFit(x, y, dy, model, minimum, symmetric=False):
     return np.array(uncertainties)
 
 def fit(x, y, dy, model, guess, bounds=None, method=None, error_method=1, silent=False):
+    if dy == 0:
+        dy = 1
+        silent=True
     params = fitParameters(x, y, dy, model, guess, bounds=bounds, method=method)
     if error_method == 1:
         errors = errorFit(x, y, dy, model, params, symmetric=True)
@@ -77,10 +80,12 @@ def fit(x, y, dy, model, guess, bounds=None, method=None, error_method=1, silent
         errors = errorFit2(x, y, dy, model, params)
     if not silent:
         ls = chi2(x, y, dy, model, params)
+        df = len(x) - len(guess)
         print("Least squares value: " + str(round(ls, 3)))
-        p = 1 - stats.chi2.cdf(ls, len(x) - len(guess))
+        print("Reduced Least squares: " + str(round(ls/df, 3)))
+        p = 1 - stats.chi2.cdf(ls, df)
         print("p-value: " + str(round(p, 3)))
-    return np.array([params, errors]).T
+    return np.array([params, np.abs(errors)]).T
 
 
 def find_nearest(array,value):
@@ -164,15 +169,17 @@ def rounder(value, error, power=None, precision=None, power_error=None, precisio
 
     if showPower and power != 0:
         if power == 1:
-            return "(${0} \\pm {1}$) \\cdot 10".format(value_rounded, error_rounded)
+            return "$({0} \\pm {1}) \\cdot 10$".format(value_rounded, error_rounded)
         else:
-            return "(${0} \\pm {1}$) \\cdot 10^{{{2}}}".format(value_rounded, error_rounded, power)
+            return "$({0} \\pm {1}) \\cdot 10^{{{2}}}$".format(value_rounded, error_rounded, power)
     elif (showPower and power == 0) or (not showPower and not diff_power):
         return "${0} \\pm {1}$".format(value_rounded, error_rounded)
     elif not showPower and diff_power:
-        return "(${0} \\pm {1}$) \\cdot 10^{{{2}}}".format(value_rounded, error_rounded, diff_power)
+        return "$({0} \\pm {1}) \\cdot 10^{{{2}}}$".format(value_rounded, error_rounded, diff_power)
 
 def rounder_array(values, errors, power=None):
+    if type(errors) == float and type(values) != float:
+        errors = [error]*len(values)
     precisions, power_errors, precision_errors = np.array([get_powers(value, error) for value, error in zip(values, errors)]).T
     if power == None:
         if (power_errors < 0).any():
