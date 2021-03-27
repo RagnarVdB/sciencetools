@@ -70,7 +70,7 @@ def errorFit(x, y, dy, model, minimum, symmetric=False):
     return np.array(uncertainties)
 
 def fit(x, y, dy, model, guess, bounds=None, method=None, error_method=1, silent=False):
-    if dy == 0:
+    if type(dy) == int and dy == 0:
         dy = 1
         silent=True
     params = fitParameters(x, y, dy, model, guess, bounds=bounds, method=method)
@@ -87,6 +87,11 @@ def fit(x, y, dy, model, guess, bounds=None, method=None, error_method=1, silent
         print("p-value: " + str(round(p, 3)))
     return np.array([params, np.abs(errors)]).T
 
+def goodness_fit(x, y, dy, model, params):
+    ls = chi2(x, y, dy, model, params)
+    df = len(x) - len(params)
+    p = 1 - stats.chi2.cdf(ls, df)
+    return ls, ls/df, p
 
 def find_nearest(array,value):
     idx = np.searchsorted(array, value, side="left")
