@@ -1,59 +1,62 @@
 import math
 import sympy as sp
 import numpy as np
+import pandas as pd
 import scipy.optimize as opt
 from scipy.misc import derivative
 from scipy import stats
+from inspect import getfullargspec
 
+pandasGlobal = True
+
+def set_pandas(pandas):
+    pandasGlobal = pandas
 
 def errorprop(f, variables, values, errors):
-  returnvals = f.subs([(var, val) for var, val in zip(variables, values)])
-  derivsum = sum([sp.Derivative(f, var)**2 * err**2 for var, err in zip(variables, errors)])
-  prop = sp.sqrt(derivsum).doit().subs([(var, val) for var, val in zip(variables, values)])
-  return sp.N(returnvals), sp.N(prop)
+    """Propagate errors"""
+    returnvals = f.subs([(var, val) for var, val in zip(variables, values)])
+    derivsum = sum([sp.Derivative(f, var)**2 * err**2 for var, err in zip(variables, errors)])
+    prop = sp.sqrt(derivsum).doit().subs([(var, val) for var, val in zip(variables, values)])
+    return np.float64(sp.N(returnvals)), np.float64(sp.N(prop))
 
 
 def chi2(x, y, dy, model, parameters):
-    # Geeft chi^2 waarde voor gegeven parameters, model en waarden
+    """Geeft least-squares waarde terug"""
     errors = ((y - model(x, *parameters))**2) / dy**2
     return np.sum(errors)
 
-def fitParameters(x, y, dy, model, guess, bounds=None, method=None):
-    # minimaliseerd de chi2 functie
+def _fitParameters(x, y, dy, model, guess, bounds=None, method=None):
+    """minimaliseerd de chi2 functie"""
     minobj = opt.minimize(lambda p: chi2(x, y, dy, model, p), guess, bounds=bounds, method=method)
-    #if minobj["success"]:
-        #print("success")
-    #else:
-        #print("unsuccessful")
-        #print(minobj["message"])
     return(minobj["x"])
 
-def substitute(x, i, array):
-    # Vervangt één element in een numpy array
+def substitute(x, index, array):
+    """Vervangt één element in een numpy array"""
     new_array = np.array(array)
-    new_array[i] = x
+    new_array[index] = x
     return new_array
 
 def intersect(x_array, y_array1, y_array2):
-    # Geeft intersects van twee numpy arrays
+    """Geeft intersects van twee numpy arrays"""
     intersect_indices = np.argwhere(np.diff(np.sign(y_array1 - y_array2))).flatten()
     intersects = x_array[intersect_indices]
     return intersects
 
-def errorFit2(x, y, dy, model, minimum):
-    # Geeft onzekerheidsinterval rond fitparameters
+def _errorFit2(x, y, dy, model, minimum):
+    """Geeft onzekerheidsinterval rond fitparameters via tweede afgeleide"""
     uncertainties = []
     for i in range(len(minimum)):
         deriv = derivative(lambda p: chi2(x, y, dy, model, substitute(p, i, minimum)), minimum[i], n=2)
         uncertainties.append(np.sqrt(2/deriv))
     return np.array(uncertainties)
 
-def min_chi2(xy, chi2_single, minimum):
+def _min_chi2(xy, chi2_single, minimum):
     x, y = xy
     return np.array([y - chi2_single(x), y - minimum - 1])
 
 
-def errorFit(x, y, dy, model, minimum, symmetric=False):
+def _errorFit(x, y, dy, model, minimum, symmetric=False):
+    """Geeft onzekerheidsinterval rond fitparameters via chi2 + 1"""
     uncertainties = []
     for i in range(len(minimum)):
         chi2_parameter = lambda p: chi2(x, y, dy, model, substitute(p, i, minimum))
@@ -69,25 +72,36 @@ def errorFit(x, y, dy, model, minimum, symmetric=False):
             uncertainties.append(avg)
     return np.array(uncertainties)
 
-def fit(x, y, dy, model, guess, bounds=None, method=None, error_method=1, silent=False):
+def fit(x, y, dy, model, guess=None, bounds=None, method=None, error_method=1, silent=False, pandas=True):
+    """Voert fit uit voor gegeven dataset en model"""
     if type(dy) == int and dy == 0:
         dy = 1
         silent=True
-    params = fitParameters(x, y, dy, model, guess, bounds=bounds, method=method)
+    
+    modelParams = getfullargspec(model).args
+    if not guess:
+        guess = [1]*(len(modelParams) - 1)
+
+    params = _fitParameters(x, y, dy, model, guess, bounds=bounds, method=method)
     if error_method == 1:
-        errors = errorFit(x, y, dy, model, params, symmetric=True)
+        errors = _errorFit(x, y, dy, model, params, symmetric=True)
     else:
-        errors = errorFit2(x, y, dy, model, params)
+        errors = _errorFit2(x, y, dy, model, params)
+
     if not silent:
-        ls = chi2(x, y, dy, model, params)
-        df = len(x) - len(guess)
+        ls, rls, p = goodness_fit(x, y, dy, model, params)
         print("Least squares value: " + str(round(ls, 3)))
-        print("Reduced Least squares: " + str(round(ls/df, 3)))
-        p = 1 - stats.chi2.cdf(ls, df)
+        print("Reduced Least squares: " + str(round(rls, 3)))
         print("p-value: " + str(round(p, 3)))
-    return np.array([params, np.abs(errors)]).T
+    
+    arr = np.array([params, np.abs(errors)]).T
+    if not pandas or not pandasGlobal:
+        return arr
+    else:
+        return pd.DataFrame(arr, index=modelParams[1:], columns=["value", "error"])
 
 def goodness_fit(x, y, dy, model, params):
+    """Geeft chi2, reduced chi2 en p-waarde terug"""
     ls = chi2(x, y, dy, model, params)
     df = len(x) - len(params)
     p = 1 - stats.chi2.cdf(ls, df)
@@ -101,7 +115,7 @@ def find_nearest(array,value):
         return idx
 
 def weighted_average(waardenlijst, foutenlijst):
-    #returnt gewogen gemiddelde en de bijhorende fout
+    """Geeft gewogen gemiddelde en de bijhorende fout"""
     gewichtenlijst = []
     for fout in foutenlijst:
         gewichtenlijst.append(1 / (fout**2))
@@ -123,7 +137,7 @@ def find_zero_indices(array):
     indices = np.argwhere(diffs == True)[:,0]
     return indices
 
-def get_powers(value, error):
+def _get_powers(value, error):
     power_error = -math.floor(math.log(error, 10))
     first_char = int(str(round(error*10**(power_error), 1))[0])
     power_error += int(first_char == 1)
@@ -140,10 +154,11 @@ def get_powers(value, error):
     return precision, power_error, precision_error
 
 def rounder(value, error, power=None, precision=None, power_error=None, precision_error=None, showPower=True):
+    """Print waarde en fout in latex"""
     value = float(value)
     error = float(error)
     if precision == None or power_error == None or precision_error == None:
-        precision, power_error, precision_error = get_powers(value, error)
+        precision, power_error, precision_error = _get_powers(value, error)
     diff_power = 0
     if power == None:
         if power_error < 0:
@@ -183,9 +198,10 @@ def rounder(value, error, power=None, precision=None, power_error=None, precisio
         return "$({0} \\pm {1}) \\cdot 10^{{{2}}}$".format(value_rounded, error_rounded, diff_power)
 
 def rounder_array(values, errors, power=None):
+    """Geeft array van waarden en fouten in latex"""
     if type(errors) == float and type(values) != float:
         errors = [error]*len(values)
-    precisions, power_errors, precision_errors = np.array([get_powers(value, error) for value, error in zip(values, errors)]).T
+    precisions, power_errors, precision_errors = np.array([_get_powers(value, error) for value, error in zip(values, errors)]).T
     if power == None:
         if (power_errors < 0).any():
             power = -min(power_errors)
@@ -195,3 +211,52 @@ def rounder_array(values, errors, power=None):
     for i in range(len(values)):
         strings.append(rounder(values[i], errors[i], power, precisions[i], power_errors[i], precision_errors[i], False))
     return np.array(strings, dtype=str), power
+
+def print_dataframe(df, values=None, errors=None, powers=None):
+    """geeft pandas dataframe terug in latexstrings"""
+    cols = df.columns
+    if not values or not errors:
+        values = []
+        errors = []
+        for col in cols:
+            if col[0] == "d" and col[1:] in cols:
+                values.append(col[1:])
+                errors.append(col)
+        for col in cols:
+            if not col in values and not col in errors:
+                values.append(col)
+    if not powers:
+        powers = [None]*len(errors)
+    pd_dict = {}
+    for i in range(len(values)):
+        if i < len(errors):
+            #print(values[i], errors[i], powers[i])
+            #print(ff.rounder_array(df[values[i]], df[errors[i]], powers[i])[0])
+            pd_dict[values[i]] = ff.rounder_array(df[values[i]], df[errors[i]], powers[i])[0]
+        else:
+            if i < len(powers) and powers[i]:
+                pd_dict[values[i]] = df[values[i]]*10**(-powers[i])
+            else:
+                pd_dict[values[i]] = df[values[i]]
+
+    return pd.DataFrame(pd_dict)
+
+def test_compatibiliteit(x, sx, y, sy, alpha=None):
+    """Test compatibiliteit van twee waarden"""
+    fout = np.sqrt(sx**2 + sy**2)
+    z = np.abs(x-y) / fout
+    p = 2*(1 - stats.norm.cdf(z))
+    print("z-value is:  ", str(round(z, 3)))
+    print("p-value is:  ", str(round(p, 3)), " = ", str(round(p*100,1)),"%")
+    if alpha:
+        if p < alpha:
+            print("REJECT at alpha = {}".format(alpha))
+        else:
+            print("NOT REJECTED at alpha = {}".format(alpha))
+    else:
+        if p < 0.05:
+            print("REJECT at alpha = 0.05")
+        if p < 0.01:
+            print("REJECT at alpha = 0.01")
+
+    return z, p

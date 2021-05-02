@@ -1,15 +1,21 @@
 # FysFuncties
+
 Bevat nuttige functies voor practica.
 
 ## Installeren
-Bestand FysFuncties.py downloaden en in dezelfde map zetten.
-## Voorbeelden
+
+    pip install fysfuncties
+
+# Voorbeelden
+
 ```python
-import FysFuncties as ff
+import fysfuncties as ff
 import sympy as sp
 import numpy as np
+import pandas as pd
 ```
-### Error propagatie
+## Error propagatie
+
 functie f = x*sqrt(y) met
 
 
@@ -23,5 +29,6 @@ f = x * sp.sqrt(y)
 waarde, fout = ff.errorprop(f, [x, y], [1.8, 56.0], [0.2, 1.2])
 >>> 13.4699665923862, 1.50360519134132
 ```
-### Fitten
-### Afronden
+## Fitten
+
+## Afronden
