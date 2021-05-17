@@ -19,6 +19,14 @@ def errorprop(f, variables, values, errors):
     prop = sp.sqrt(derivsum).doit().subs([(var, val) for var, val in zip(variables, values)])
     return np.float64(sp.N(returnvals)), np.float64(sp.N(prop))
 
+def errorprop2(f, values, errors):
+    value = f(*values)
+    som = 0
+    for i in range(0, len(values)):
+        deriv = derivative(lambda x: f(*values[0:i], x, *values[i+1:len(values)]), values[i])
+        som += (deriv**2 * errors[i]**2)
+    error = np.sqrt(som)
+    return (value, error)
 
 def chi2(x, y, dy, model, parameters):
     """Geeft least-squares waarde terug"""
@@ -230,9 +238,7 @@ def print_dataframe(df, values=None, errors=None, powers=None):
     pd_dict = {}
     for i in range(len(values)):
         if i < len(errors):
-            #print(values[i], errors[i], powers[i])
-            #print(ff.rounder_array(df[values[i]], df[errors[i]], powers[i])[0])
-            pd_dict[values[i]] = ff.rounder_array(df[values[i]], df[errors[i]], powers[i])[0]
+            pd_dict[values[i]] = rounder_array(df[values[i]], df[errors[i]], powers[i])[0]
         else:
             if i < len(powers) and powers[i]:
                 pd_dict[values[i]] = df[values[i]]*10**(-powers[i])
