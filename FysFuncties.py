@@ -87,7 +87,7 @@ def fit(x, y, dy, model, guess=None, bounds=None, method=None, error_method=1, s
         silent=True
     
     modelParams = getfullargspec(model).args
-    if not guess:
+    if guess is None:
         guess = [1]*(len(modelParams) - 1)
 
     params = _fitParameters(x, y, dy, model, guess, bounds=bounds, method=method)
@@ -208,7 +208,7 @@ def rounder(value, error, power=None, precision=None, power_error=None, precisio
 def rounder_array(values, errors, power=None):
     """Geeft array van waarden en fouten in latex"""
     if type(errors) == float and type(values) != float:
-        errors = [error]*len(values)
+        errors = [errors]*len(values)
     precisions, power_errors, precision_errors = np.array([_get_powers(value, error) for value, error in zip(values, errors)]).T
     if power == None:
         if (power_errors < 0).any():
