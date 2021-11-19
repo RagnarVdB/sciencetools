@@ -7,7 +7,8 @@ README = (HERE / "readme.md").read_text()
 setup(
     name='fysfuncties',
     version='0.0.1',
-    py_modules=['fysfuncties'],
+    #py_modules=['fysfuncties'],
+    packages=['fysfuncties'],
     description='Nuttige functies voor practica',
     long_description=README,
     long_description_content_type='text/markdown',

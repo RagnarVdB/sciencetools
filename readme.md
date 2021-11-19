@@ -3,8 +3,9 @@
 Bevat nuttige functies voor practica.
 
 ## Installeren
-
-    pip install fysfuncties
+    git clone 
+    cd helpers
+    pip install .
 
 # Voorbeelden
 

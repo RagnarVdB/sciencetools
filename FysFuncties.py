@@ -58,10 +58,6 @@ def _errorFit2(x, y, dy, model, minimum):
         uncertainties.append(np.sqrt(2/deriv))
     return np.array(uncertainties)
 
-def _min_chi2(xy, chi2_single, minimum):
-    x, y = xy
-    return np.array([y - chi2_single(x), y - minimum - 1])
-
 
 def _errorFit(x, y, dy, model, minimum, symmetric=False):
     """Geeft onzekerheidsinterval rond fitparameters via chi2 + 1"""
