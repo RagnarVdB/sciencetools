@@ -3,14 +3,14 @@
 Bevat nuttige functies voor practica.
 
 ## Installeren
-    git clone 
-    cd helpers
-    pip install .
+    git clone git@github.com:RagnarVdB/FysFuncties.git
+    cd FysFuncties
+    pip install -e .
 
 # Voorbeelden
 
 ```python
-import fysfuncties as ff
+from fysfuncties import fitting, stats
 import sympy as sp
 import numpy as np
 import pandas as pd
@@ -27,7 +27,7 @@ y = 56.0  +/- 1.2
 # definieer sympy symbolen en functie
 x, y = sp.symbols("x y")
 f = x * sp.sqrt(y)
-waarde, fout = ff.errorprop(f, [x, y], [1.8, 56.0], [0.2, 1.2])
+waarde, fout = stats.errorprop(f, [x, y], [1.8, 56.0], [0.2, 1.2])
 >>> 13.4699665923862, 1.50360519134132
 ```
 ## Fitten
