@@ -26,32 +26,30 @@ def open_images(folder):
         print("date not found")
     return images
 
+def plot_image(image, dr):
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    med = np.median(image)
+    ax.imshow(image, vmin=med-dr, vmax=med+dr, origin="lower")
 
 def plot_images(images, column, dr, aspect=3, dpi=100, title=None):
-    if type(images) == np.ndarray and len(images.shape) == 2:
-        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-        med = np.median(images)
-        ax.imshow(images, vmin=med-dr, vmax=med+dr, origin="lower")
-    elif type(images) == pd.DataFrame:
-        l = math.ceil(len(images)/3)
-        fig, axes = plt.subplots(l, 3, figsize=(15, 15/aspect * math.ceil(l/3)), dpi=dpi)
-        axs = axes.flatten()
-        meds = []
-        j=0
-        for i, im in images.iterrows():
-            med = np.median(im[column])
-            meds.append(med)
-            axs[j].imshow(im[column], vmin=med-dr, vmax=med+dr, origin="lower")
-            if title is not None:
-                axs[j].set_title(im[title])
-            j+=1
-        
-        while j < len(axs):
-            fig.delaxes(axs[j])
-            j+=1
-
-        fig.tight_layout()
-        #return (meds)
+    l = math.ceil(len(images)/3)
+    fig, axes = plt.subplots(l, 3, figsize=(15, 15/aspect * math.ceil(l/3)), dpi=dpi)
+    axs = axes.flatten()
+    meds = []
+    j=0
+    for i, im in images.iterrows():
+        med = np.median(im[column])
+        meds.append(med)
+        axs[j].imshow(im[column], vmin=med-dr, vmax=med+dr, origin="lower")
+        if title is not None:
+            axs[j].set_title(im[title])
+        j+=1
+    
+    while j < len(axs):
+        fig.delaxes(axs[j])
+        j+=1
+    fig.tight_layout()
+    #return (meds)
 
 
 def zoom(image, center, size):
@@ -81,9 +79,19 @@ def crop(image):
     return image[x1:x2,y1:y2]
 
 
-def make_master(frames, column):
-    return np.median(np.array(list(frames[column])), axis=0)
+def make_master(frames, column, targetExptime=None, exptimeLabel="EXPTIME"):
+    if targetExptime is None:
+        return np.median(np.array(list(frames[column])), axis=0)
+    else:
+        print((np.array(list(frames[column]))/ np.array(list(frames["EXPTIME"]))[:,np.newaxis, np.newaxis]).shape)
+        print(np.array(list(frames["EXPTIME"]))[:,np.newaxis, np.newaxis])
+        print(np.array(list(frames[column])).shape)
+        return np.median(np.array(list(frames[column])) * targetExptime / np.array(list(frames["EXPTIME"]))[:,np.newaxis, np.newaxis], axis=0)
 
-def reduce(images, old_column, new_column, master_bias, master_flat, master_dark):
+def reduce(images, old_column, new_column, master_bias, master_flat, master_dark, flatExptime, darkExptime, exptimeLabel="EXPTIME"):
     if type(images) == pd.DataFrame:
-        images[new_column] = (images[old_column] - master_bias)
+        S = np.array(list(images.data))
+        ts = np.array(images[exptimeLabel])
+        noemer = (master_flat - master_bias - master_dark*(flatExptime/darkExptime))[np.newaxis,:,:]
+        I = (S - master_bias[np.newaxis,:,:] - master_dark[np.newaxis,:,:]*(ts[:,np.newaxis, np.newaxis]/darkExptime)) / (noemer/noemer.max())
+        images[new_column] = list(I)
