@@ -90,7 +90,7 @@ def make_master(frames, column, targetExptime=None, exptimeLabel="EXPTIME"):
 
 def reduce(images, old_column, new_column, master_bias, master_flat, master_dark, flatExptime, darkExptime, exptimeLabel="EXPTIME"):
     if type(images) == pd.DataFrame:
-        S = np.array(list(images.data))
+        S = np.array(list(images[old_column]))
         ts = np.array(images[exptimeLabel])
         noemer = (master_flat - master_bias - master_dark*(flatExptime/darkExptime))[np.newaxis,:,:]
         I = (S - master_bias[np.newaxis,:,:] - master_dark[np.newaxis,:,:]*(ts[:,np.newaxis, np.newaxis]/darkExptime)) / (noemer/noemer.max())

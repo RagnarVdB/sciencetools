@@ -1,16 +1,15 @@
-# FysFuncties
+# Sciencetools
 
 Bevat nuttige functies voor practica.
 
 ## Installeren
-    git clone git@github.com:RagnarVdB/FysFuncties.git
-    cd FysFuncties
-    pip install -e .
+    pip install git+git@github.com:RagnarVdB/sciencetools.git@main
+
 
 # Voorbeelden
 
 ```python
-from fysfuncties import fitting, stats
+from sciencetools import fitting, stats
 import sympy as sp
 import numpy as np
 import pandas as pd

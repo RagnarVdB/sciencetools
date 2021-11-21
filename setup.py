@@ -5,14 +5,13 @@ HERE = pathlib.Path(__file__).parent
 README = (HERE / "readme.md").read_text()
 
 setup(
-    name='fysfuncties',
+    name='sciencetools',
     version='0.0.1',
-    #py_modules=['fysfuncties'],
-    packages=['fysfuncties'],
+    packages=['sciencetools'],
     description='Nuttige functies voor practica',
     long_description=README,
     long_description_content_type='text/markdown',
-    url='https://github.com/ragnarvdb/fysfuncties',
+    url='https://github.com/ragnarvdb/sciencetools',
     author='RagnarVdB',
     author_email='59337368+RagnarVdB@users.noreply.github.com',
     license="MIT",
@@ -20,6 +19,7 @@ setup(
         'numpy',
         'scipy',
         'sympy',
-        'pandas'
+        'pandas',
+        'astropy'
     ]
 )

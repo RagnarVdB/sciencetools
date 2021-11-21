@@ -2,8 +2,8 @@ import numpy as np
 import scipy.optimize as opt
 from scipy.misc import derivative
 from scipy import stats
-from fysfuncties.stats import chi2
-from fysfuncties.misc import *
+from sciencetools.stats import chi2
+from sciencetools.misc import *
 from inspect import getfullargspec
 import pandas as pd
 

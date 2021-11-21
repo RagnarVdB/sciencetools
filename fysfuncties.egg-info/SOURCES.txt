@@ -1,7 +1,0 @@
-LICENSE
-setup.py
-fysfuncties.egg-info/PKG-INFO
-fysfuncties.egg-info/SOURCES.txt
-fysfuncties.egg-info/dependency_links.txt
-fysfuncties.egg-info/requires.txt
-fysfuncties.egg-info/top_level.txt
