@@ -24,3 +24,16 @@ def find_zero_indices(array):
     diffs = (np.diff(np.sign(array)) != 0)
     indices = np.argwhere(diffs == True)[:,0]
     return indices
+
+def filterDf(df, key, value):
+    newdf = df[df[key] == value]
+    # newdf.reset_index(inplace=True)
+    return newdf.reset_index()
+
+def diffDf(image, i1, i2):
+    for x in images.columns:
+        try:
+            if images[x][i1] != images[x][i2]:
+                print("{}:         {} | {}".format(x, images[x][i1], images[x][i2]))
+        except ValueError:
+            pass

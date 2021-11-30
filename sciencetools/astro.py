@@ -26,12 +26,14 @@ def open_images(folder):
         print("date not found")
     return images
 
-def plot_image(image, dr):
+def plot_image(image, dr, cmap="inferno", vminmax=False):
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     med = np.median(image)
-    ax.imshow(image, vmin=med-dr, vmax=med+dr, origin="lower")
+    ax.imshow(image, vmin=med*(1-dr/100), vmax=med*(1+dr/100), origin="lower", cmap=cmap)
+    if vminmax:
+        return med*(1-dr/100), med*(1+dr/100)
 
-def plot_images(images, column, dr, aspect=3, dpi=100, title=None):
+def plot_images(images, column, dr, aspect=3, dpi=100, title=None, cmap="inferno"):
     l = math.ceil(len(images)/3)
     fig, axes = plt.subplots(l, 3, figsize=(15, 15/aspect * math.ceil(l/3)), dpi=dpi)
     axs = axes.flatten()
@@ -40,7 +42,7 @@ def plot_images(images, column, dr, aspect=3, dpi=100, title=None):
     for i, im in images.iterrows():
         med = np.median(im[column])
         meds.append(med)
-        axs[j].imshow(im[column], vmin=med-dr, vmax=med+dr, origin="lower")
+        axs[j].imshow(im[column], vmin=med*(1-dr/100), vmax=med*(1+dr/100), origin="lower", cmap=cmap)
         if title is not None:
             axs[j].set_title(im[title])
         j+=1
@@ -83,9 +85,6 @@ def make_master(frames, column, targetExptime=None, exptimeLabel="EXPTIME"):
     if targetExptime is None:
         return np.median(np.array(list(frames[column])), axis=0)
     else:
-        print((np.array(list(frames[column]))/ np.array(list(frames["EXPTIME"]))[:,np.newaxis, np.newaxis]).shape)
-        print(np.array(list(frames["EXPTIME"]))[:,np.newaxis, np.newaxis])
-        print(np.array(list(frames[column])).shape)
         return np.median(np.array(list(frames[column])) * targetExptime / np.array(list(frames["EXPTIME"]))[:,np.newaxis, np.newaxis], axis=0)
 
 def reduce(images, old_column, new_column, master_bias, master_flat, master_dark, flatExptime, darkExptime, exptimeLabel="EXPTIME"):

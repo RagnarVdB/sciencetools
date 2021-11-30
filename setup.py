@@ -20,6 +20,5 @@ setup(
         'scipy',
         'sympy',
         'pandas',
-        'astropy'
     ]
 )

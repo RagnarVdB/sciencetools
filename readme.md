@@ -3,7 +3,7 @@
 Bevat nuttige functies voor practica.
 
 ## Installeren
-    pip install git+git@github.com:RagnarVdB/sciencetools.git@main
+    pip install git+https://github.com/RagnarVdB/sciencetools.git
 
 
 # Voorbeelden
