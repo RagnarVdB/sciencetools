@@ -12,9 +12,9 @@ pandasGlobal = True
 def set_pandas(pandas):
     pandasGlobal = pandas
 
-def _fitParameters(x, y, dy, model, guess, bounds=None, method=None):
+def _fitParameters(x, y, dy, model, guess, bounds=None, method=None, **kwargs):
     """minimaliseerd de chi2 functie"""
-    minobj = opt.minimize(lambda p: chi2(x, y, dy, model, p), guess, bounds=bounds, method=method)
+    minobj = opt.minimize(lambda p: chi2(x, y, dy, model, p), guess, **kwargs)
     return(minobj["x"])
 
 def _errorFit2(x, y, dy, model, minimum):
@@ -42,7 +42,7 @@ def _errorFit(x, y, dy, model, minimum, symmetric=False):
             uncertainties.append(avg)
     return np.array(uncertainties)
 
-def fit(x, y, dy, model, guess=None, bounds=None, method=None, error_method=1, silent=False, pandas=True):
+def fit(x, y, dy, model, guess=None, bounds=None, method=None, error_method=1, silent=False, pandas=True, **kwargs):
     """Voert fit uit voor gegeven dataset en model"""
     if type(dy) == int and dy == 0:
         dy = 1
@@ -52,7 +52,7 @@ def fit(x, y, dy, model, guess=None, bounds=None, method=None, error_method=1, s
     if guess is None:
         guess = [1]*(len(modelParams) - 1)
 
-    params = _fitParameters(x, y, dy, model, guess, bounds=bounds, method=method)
+    params = _fitParameters(x, y, dy, model, guess, bounds=bounds, method=method, **kwargs)
     if error_method == 1:
         errors = _errorFit(x, y, dy, model, params, symmetric=True)
     else:
