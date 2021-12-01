@@ -12,9 +12,27 @@ pandasGlobal = True
 def set_pandas(pandas):
     pandasGlobal = pandas
 
-def _fitParameters(x, y, dy, model, guess, bounds=None, method=None, **kwargs):
+def gradient_respecting_bounds(bounds, fun, eps=1e-8):
+    """bounds: list of tuples (lower, upper)"""
+    def gradient(x):
+        fx = fun(x)
+        grad = np.zeros(len(x))
+        for k in range(len(x)):
+            d = np.zeros(len(x))
+            d[k] = eps if x[k] + eps <= bounds[k][1] else -eps
+            grad[k] = (fun(x + d) - fx) / d[k]
+        return grad
+    return gradient
+
+
+def _fitParameters(x, y, dy, model, guess, bounds=None, method=None, respect_bounds=False, **kwargs):
     """minimaliseerd de chi2 functie"""
-    minobj = opt.minimize(lambda p: chi2(x, y, dy, model, p), guess, **kwargs)
+    f = lambda p: chi2(x, y, dy, model, p)
+    if respect_bounds:
+        jac = gradient_respecting_bounds(bounds, f)
+        minobj = opt.minimize(f, guess, **kwargs, jac=jac)
+    else:
+        minobj = opt.minimize(f, guess, **kwargs)
     return(minobj["x"])
 
 def _errorFit2(x, y, dy, model, minimum):
@@ -42,7 +60,7 @@ def _errorFit(x, y, dy, model, minimum, symmetric=False):
             uncertainties.append(avg)
     return np.array(uncertainties)
 
-def fit(x, y, dy, model, guess=None, bounds=None, method=None, error_method=1, silent=False, pandas=True, **kwargs):
+def fit(x, y, dy, model, guess=None, bounds=None, method=None, error_method=1, respect_bounds=False, silent=False, pandas=True, **kwargs):
     """Voert fit uit voor gegeven dataset en model"""
     if type(dy) == int and dy == 0:
         dy = 1
@@ -52,7 +70,7 @@ def fit(x, y, dy, model, guess=None, bounds=None, method=None, error_method=1, s
     if guess is None:
         guess = [1]*(len(modelParams) - 1)
 
-    params = _fitParameters(x, y, dy, model, guess, bounds=bounds, method=method, **kwargs)
+    params = _fitParameters(x, y, dy, model, guess, bounds=bounds, method=method, respect_bounds=respect_bounds, **kwargs)
     if error_method == 1:
         errors = _errorFit(x, y, dy, model, params, symmetric=True)
     else:
