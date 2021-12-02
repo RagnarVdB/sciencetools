@@ -5,6 +5,7 @@ import os
 from matplotlib import pyplot as plt
 import math
 from scipy import optimize as opt
+from glob import glob
 
 def open_images(folder):
     data = []
@@ -25,6 +26,16 @@ def open_images(folder):
     except:
         print("date not found")
     return images
+
+def open_spectra(paths, index=1):
+    els = []
+    for f in paths:
+        with fits.open(f) as hdu:
+            el = dict(hdu[index].header)
+            for field in hdu[index].data.dtype.fields:
+                el[field.lower()] = np.array(hdu[1].data[field])
+        els.append(el)
+    return pd.DataFrame(els)
 
 def plot_image(image, dr, cmap="inferno", vminmax=False):
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
