@@ -37,3 +37,6 @@ def diffDf(image, i1, i2):
                 print("{}:         {} | {}".format(x, images[x][i1], images[x][i2]))
         except ValueError:
             pass
+
+def getMatrix(df, column):
+    return np.array(list(df[column]))
