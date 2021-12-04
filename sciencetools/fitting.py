@@ -30,9 +30,9 @@ def _fitParameters(x, y, dy, model, guess, bounds=None, method=None, respect_bou
     f = lambda p: chi2(x, y, dy, model, p)
     if respect_bounds:
         jac = gradient_respecting_bounds(bounds, f)
-        minobj = opt.minimize(f, guess, **kwargs, jac=jac)
+        minobj = opt.minimize(f, guess, bounds=bounds, jac=jac, **kwargs)
     else:
-        minobj = opt.minimize(f, guess, **kwargs)
+        minobj = opt.minimize(f, guess, bounds=bounds, **kwargs)
     return(minobj["x"])
 
 def _errorFit2(x, y, dy, model, minimum):
