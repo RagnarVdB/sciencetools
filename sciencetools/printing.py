@@ -18,7 +18,7 @@ def _get_powers(value, error):
         precision_error = 0
     return precision, power_error, precision_error
 
-def rounder(value, error, power=None, precision=None, power_error=None, precision_error=None, showPower=True):
+def rounder(value, error, power=None, precision=None, power_error=None, precision_error=None, showPower=True, decimal="."):
     """Print waarde en fout in latex"""
     value = float(value)
     error = float(error)
@@ -49,8 +49,8 @@ def rounder(value, error, power=None, precision=None, power_error=None, precisio
             deficit = power_error - precision_error
             error_rounded = str(error_rounded) + "0"*deficit
 
-    value_rounded = str(value_rounded).replace(".", ",")
-    error_rounded = str(error_rounded).replace(".", ",")
+    value_rounded = str(value_rounded).replace(".", decimal)
+    error_rounded = str(error_rounded).replace(".", decimal)
 
     if showPower and power != 0:
         if power == 1:
