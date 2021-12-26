@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import math
 
+from sciencetools.stats import errorprop
+
 def _get_powers(value, error):
     power_error = -math.floor(math.log(error, 10))
     first_char = int(str(round(error*10**(power_error), 1))[0])
@@ -18,7 +20,24 @@ def _get_powers(value, error):
         precision_error = 0
     return precision, power_error, precision_error
 
-def rounder(value, error, power=None, precision=None, power_error=None, precision_error=None, showPower=True, decimal="."):
+def _print_string(value, error, power, latex):
+    if power is None:
+        if latex:
+            return f"${value} \\pm {error}$"
+        else:
+            return f"{value} ± {error}"
+    elif power == 1:
+        if latex:
+            return f"$({value} \\pm {error}) \\cdot 10$"
+        else:
+            return f"({value} ± {error}) * 10"
+    else:
+        if latex:
+            return f"$({value} \\pm {error}) \\cdot 10^{{{power}}}$"
+        else:
+            return f"({value} ± {error}) * 10^{power}"
+
+def rounder(value, error, power=None, precision=None, power_error=None, precision_error=None, showPower=True, decimal=".", latex=True):
     """Print waarde en fout in latex"""
     value = float(value)
     error = float(error)
@@ -53,14 +72,11 @@ def rounder(value, error, power=None, precision=None, power_error=None, precisio
     error_rounded = str(error_rounded).replace(".", decimal)
 
     if showPower and power != 0:
-        if power == 1:
-            return "$({0} \\pm {1}) \\cdot 10$".format(value_rounded, error_rounded)
-        else:
-            return "$({0} \\pm {1}) \\cdot 10^{{{2}}}$".format(value_rounded, error_rounded, power)
+        return _print_string(value_rounded, error_rounded, power, latex)
     elif (showPower and power == 0) or (not showPower and not diff_power):
-        return "${0} \\pm {1}$".format(value_rounded, error_rounded)
+        return _print_string(value_rounded, error_rounded, None, latex)
     elif not showPower and diff_power:
-        return "$({0} \\pm {1}) \\cdot 10^{{{2}}}$".format(value_rounded, error_rounded, diff_power)
+        return _print_string(value_rounded, error_rounded, diff_power, latex)
 
 def rounder_array(values, errors, power=None):
     """Geeft array van waarden en fouten in latex"""
