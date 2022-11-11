@@ -7,23 +7,70 @@ from scipy import stats
 def errorprop(f, variables, values, errors):
     """Propagate errors"""
     returnvals = f.subs([(var, val) for var, val in zip(variables, values)])
-    derivsum = sum([sp.Derivative(f, var)**2 * err**2 for var, err in zip(variables, errors)])
-    prop = sp.sqrt(derivsum).doit().subs([(var, val) for var, val in zip(variables, values)])
+    derivsum = sum(
+        [sp.Derivative(f, var) ** 2 * err**2 for var, err in zip(variables, errors)]
+    )
+    prop = (
+        sp.sqrt(derivsum)
+        .doit()
+        .subs([(var, val) for var, val in zip(variables, values)])
+    )
     return np.float64(sp.N(returnvals)), np.float64(sp.N(prop))
+
 
 def errorprop2(f, values, errors):
     value = f(*values)
     som = 0
     for i in range(0, len(values)):
-        deriv = derivative(lambda x: f(*values[0:i], x, *values[i+1:len(values)]), values[i])
-        som += (deriv**2 * errors[i]**2)
+        deriv = derivative(
+            lambda x: f(*values[0:i], x, *values[i + 1 : len(values)]), values[i]
+        )
+        som += deriv**2 * errors[i] ** 2
     error = np.sqrt(som)
     return (value, error)
 
+
+def with_errors(func):
+    """Decorator: berekent foutenmarges op functie output"""
+
+    def wrapper(*args, **kwargs):
+        if len(args) == 0:
+            value_args, error_args = [], []
+        else:
+            value_args, error_args = zip(*args)
+
+        value_kwargs = {key: value for key, (value, _) in kwargs.items()}
+
+        som = 0
+        # Arg errors
+        for i in range(0, len(value_args)):
+            deriv = derivative(
+                lambda x: func(
+                    *value_args[:i], x, *value_args[i + 1 :], **value_kwargs
+                ),
+                value_args[i],
+            )
+            som += deriv**2 * error_args[i] ** 2
+
+        # Kwarg errors
+        for key, (value, error) in kwargs.items():
+            deriv = derivative(
+                lambda x: func(*value_args, **{**value_kwargs, **{key: x}}), value
+            )
+            som += deriv**2 * error**2
+
+        value = func(*value_args, **value_kwargs)
+        error = np.sqrt(som)
+        return (value, error)
+
+    return wrapper
+
+
 def chi2(x, y, dy, model, parameters):
     """Geeft least-squares waarde terug"""
-    errors = ((y - model(x, *parameters))**2) / dy**2
+    errors = ((y - model(x, *parameters)) ** 2) / dy**2
     return np.sum(errors)
+
 
 def weighted_average(waardenlijst, foutenlijst):
     """Geeft gewogen gemiddelde en de bijhorende fout"""
@@ -34,22 +81,23 @@ def weighted_average(waardenlijst, foutenlijst):
 
     tellerlijst = []
     for i in range(len(waardenlijst)):
-        tellerlijst.append(gewichtenlijst[i]*waardenlijst[i])
+        tellerlijst.append(gewichtenlijst[i] * waardenlijst[i])
 
-    teller = sum (tellerlijst)
-    noemer = sum (gewichtenlijst)
+    teller = sum(tellerlijst)
+    noemer = sum(gewichtenlijst)
 
     gewogen_gemiddelde = teller / noemer
     # print("Het gewogen gemiddelde is ", gewogen_gemiddelde, "+-", fout_op_gemiddelde)
     return gewogen_gemiddelde, fout_op_gemiddelde
 
+
 def test_compatibiliteit(x, sx, y, sy, alpha=None):
     """Test compatibiliteit van twee waarden"""
     fout = np.sqrt(sx**2 + sy**2)
-    z = np.abs(x-y) / fout
-    p = 2*(1 - stats.norm.cdf(z))
+    z = np.abs(x - y) / fout
+    p = 2 * (1 - stats.norm.cdf(z))
     print("z-value is:  ", str(round(z, 3)))
-    print("p-value is:  ", str(round(p, 3)), " = ", str(round(p*100,1)),"%")
+    print("p-value is:  ", str(round(p, 3)), " = ", str(round(p * 100, 1)), "%")
     if alpha:
         if p < alpha:
             print("REJECT at alpha = {}".format(alpha))
